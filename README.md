@@ -64,7 +64,7 @@ Shows a summary of all stored password entries.
 pm get "My Website"
 ```
 
-Displays the complete details of a specific password entry.
+Displays the complete details of a specific password entry. The password is automatically copied to your clipboard for 10 seconds (for security) and then cleared.
 
 ### Update a Password Entry
 
@@ -97,6 +97,7 @@ Generates a secure random password of specified length (default: 16 characters).
 - **Secure Random Generation**: Uses crypto/rand for password generation
 - **File Permissions**: Data files are created with restricted permissions (600)
 - **Local Storage**: All data remains on your local machine
+- **Auto-Clearing Clipboard**: Passwords are copied to clipboard and automatically cleared after 10 seconds
 
 ## Data Storage
 

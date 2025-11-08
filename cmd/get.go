@@ -3,7 +3,10 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"os/exec"
+	"runtime"
 	"syscall"
+	"time"
 
 	"golang.org/x/term"
 	"passwordmanager/crypto"
@@ -57,7 +60,17 @@ var getCmd = &cobra.Command{
 			if entry.Title == title {
 				fmt.Printf("Title: %s\n", entry.Title)
 				fmt.Printf("Username: %s\n", entry.Username)
-				fmt.Printf("Password: %s\n", entry.Password)
+				
+				// Copy password to clipboard
+				clipboardCleared := false
+				if err := copyToClipboard(entry.Password); err != nil {
+					fmt.Fprintf(os.Stderr, "Error copying to clipboard: %v\n", err)
+					fmt.Printf("Password: %s\n", entry.Password) // Fallback to displaying
+				} else {
+					fmt.Println("Password: [Copied to clipboard for 10 seconds]")
+					clipboardCleared = true
+				}
+				
 				if entry.URL != "" {
 					fmt.Printf("URL: %s\n", entry.URL)
 				}
@@ -66,10 +79,61 @@ var getCmd = &cobra.Command{
 				}
 				fmt.Printf("Created: %s\n", entry.CreatedAt.Format("2006-01-02 15:04:05"))
 				fmt.Printf("Updated: %s\n", entry.UpdatedAt.Format("2006-01-02 15:04:05"))
+				
+				// Wait and clear clipboard after 10 seconds
+				if clipboardCleared {
+					fmt.Println("\nWaiting to clear clipboard...")
+					time.Sleep(10 * time.Second)
+					copyToClipboard("") // Clear clipboard
+					fmt.Println("Clipboard cleared.")
+				}
+				
 				return
 			}
 		}
 
 		fmt.Printf("Password entry '%s' not found.\n", title)
 	},
+}
+
+// copyToClipboard copies text to the system clipboard
+func copyToClipboard(text string) error {
+	var cmd *exec.Cmd
+	
+	switch runtime.GOOS {
+	case "darwin": // macOS
+		cmd = exec.Command("pbcopy")
+	case "linux":
+		// Try xclip first, then xsel
+		if _, err := exec.LookPath("xclip"); err == nil {
+			cmd = exec.Command("xclip", "-selection", "clipboard")
+		} else if _, err := exec.LookPath("xsel"); err == nil {
+			cmd = exec.Command("xsel", "--clipboard", "--input")
+		} else {
+			return fmt.Errorf("xclip or xsel required for clipboard support on Linux")
+		}
+	case "windows":
+		cmd = exec.Command("clip")
+	default:
+		return fmt.Errorf("unsupported platform: %s", runtime.GOOS)
+	}
+	
+	stdin, err := cmd.StdinPipe()
+	if err != nil {
+		return err
+	}
+	
+	if err := cmd.Start(); err != nil {
+		return err
+	}
+	
+	if _, err := stdin.Write([]byte(text)); err != nil {
+		return err
+	}
+	
+	if err := stdin.Close(); err != nil {
+		return err
+	}
+	
+	return cmd.Wait()
 }
