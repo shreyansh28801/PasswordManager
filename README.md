@@ -94,6 +94,7 @@ Generates a secure random password of specified length (default: 16 characters).
 
 - **AES-256-GCM Encryption**: Industry-standard encryption for all stored data
 - **Salt-based Password Hashing**: Master password is hashed with a random salt
+- **Constant-Time Password Comparison**: Uses constant-time comparison to prevent timing attacks
 - **Secure Random Generation**: Uses crypto/rand for password generation
 - **File Permissions**: Data files are created with restricted permissions (600)
 - **Local Storage**: All data remains on your local machine

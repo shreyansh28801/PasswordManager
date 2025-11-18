@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"crypto/subtle"
 	"fmt"
 	"os"
 	"syscall"
@@ -39,7 +40,8 @@ var listCmd = &cobra.Command{
 		}
 		fmt.Println()
 
-		if crypto.HashPassword(string(masterPassword), user.Salt) != user.MasterPasswordHash {
+		computedHash := crypto.HashPassword(string(masterPassword), user.Salt)
+		if subtle.ConstantTimeCompare([]byte(computedHash), []byte(user.MasterPasswordHash)) != 1 {
 			fmt.Fprintf(os.Stderr, "Invalid master password.\n")
 			os.Exit(1)
 		}
